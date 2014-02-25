@@ -32,7 +32,7 @@ def execute() {
 		def data = new JsonSlurper().parseText(connection.content.text)
 		data.jobs.findAll{ job -> !ignoredJobs.contains(job.displayName)}.each { job ->
 			def cachedJob = cachedJobs[job.displayName]
-			def buildNumber = job.builds[0].number
+			def buildNumber = job.builds[0]?.number
 			if (cachedJob != buildNumber) {
 				if (job.color == "blue") {
 					notifyBlue(job.displayName, buildNumber, job.url)
