@@ -51,6 +51,9 @@ def execute() {
 		}
 		
 	}
+	catch (java.io.IOException e) {
+		noConnectionToJenkins()
+	}
 	catch (java.net.SocketTimeoutException e) {
 		noConnectionToJenkins()
 	}
