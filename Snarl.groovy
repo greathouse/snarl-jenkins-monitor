@@ -1,8 +1,12 @@
 import groovy.json.JsonSlurper
 
-ignoredJobs = ['Insurer-CVSToGit-Sync', 'Insurer-Update-Submodules']
+jenkinsUrl = "http://localhost:8080"
+ignoredJobs = []
 
 appSignature = "green-moon/jenkins"
+buildStartedClass = "build-started"
+buildCompletedClass = "build-completed"
+generalClass = "general"
 cachedJobs = [:]
 jenkinsConnected = true
 greenMoon = "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=="
@@ -16,6 +20,7 @@ successBall = greenBall
 snarlConnection = new Socket("localhost", 5233)
 snarlConnection << """SNP/3.0\r\nregister?app-sig=${appSignature}&icon-base64=${greenMoon}&title=Green-Moon:Jenkins\r\nEND\r\n"""
 notifyConnected()
+addClasses()
 
 use (TimerMethods) {
     def timer = new Timer()
@@ -26,28 +31,12 @@ use (TimerMethods) {
 
 def execute() {
 	try {
-		def connection = new URL("http://localhost:8080/api/json?depth=1").openConnection()
-		//connection.setRequestProperty("Authorization", "Basic .....") 
-		
-		def data = new JsonSlurper().parseText(connection.content.text)
-		data.jobs.findAll{ job -> !ignoredJobs.contains(job.displayName)}.each { job ->
-			def cachedJob = cachedJobs[job.displayName]
-			def buildNumber = job.builds[0]?.number
-			if (cachedJob != buildNumber) {
-				if (job.color == "blue") {
-					notifyBlue(job.displayName, buildNumber, job.url)
-					cachedJobs[job.displayName] = buildNumber
-				}
-				else if (job.color == "red") {
-					notifyRed(job.displayName, buildNumber, job.url)
-					cachedJobs[job.displayName] = buildNumber
-				}
-			}
-		}
+		completedStatus()
+		inProgressStatus()
 		
 		if (jenkinsConnected == false) {
 			jenkinsConnected = true
-			notify("Jenkins connected successfully", "Yippie!", jenkins, "http://www.greenmoonsoftware.com")
+			notify([title:"Jenkins connected successfully", text:"Yippie!", "icon-base64":jenkins, callback:"http://www.greenmoonsoftware.com"])
 		}
 		
 	}
@@ -65,31 +54,85 @@ def execute() {
 	}
 }
 
+def completedStatus() {
+	def connection = new URL("${jenkinsUrl}/api/json?depth=1").openConnection()
+	//connection.setRequestProperty("Authorization", "Basic .....") 
+	
+	def data = new JsonSlurper().parseText(connection.content.text)
+	data.jobs.findAll{ job -> !ignoredJobs.contains(job.displayName)}.each { job ->
+		def cachedJob = cachedJobs[job.displayName]
+		def buildNumber = job.builds[0]?.number
+		if (cachedJob != buildNumber) {
+			if (job.color == "blue") {
+				notifyBlue(job.displayName, buildNumber, job.url)
+				cachedJobs[job.displayName] = buildNumber
+			}
+			else if (job.color == "red") {
+				notifyRed(job.displayName, buildNumber, job.url)
+				cachedJobs[job.displayName] = buildNumber
+			}
+		}
+	}
+}
+
+def inProgressStatus() {
+	def connection = new URL("${jenkinsUrl}/computer/api/json?depth=2").openConnection()
+	//connection.setRequestProperty("Authorization", "Basic .....") 
+	
+	def data = new JsonSlurper().parseText(connection.content.text)
+	data.computer.executors[0].findAll{ ex -> ex.currentExecutable }.each { ex ->
+		def buildName = ex.currentExecutable.fullDisplayName
+		notify([
+			title: buildName
+			, text:"Building... ${ex.progress}%"
+			, "icon-base64":jenkins
+			, callback:ex.currentExecutable.url[0]
+			, id:buildStartedClass
+			, uid: buildName
+			, "value-percent":ex.progress
+		])
+	}
+}
+
 def noConnectionToJenkins() {
 	if (jenkinsConnected) {
-		notify(1, "Jenkins is down", "Oh snap!", jenkins, "http://www.greenmoonsoftware.com")
+		notify([priority:1, title:"Jenkins is down", text:"Oh snap!", "icon-base64":jenkins, callback:"http:www.greenmoonsoftware.com"])
 		jenkinsConnected = false
 	}
 }
 
 def notifyConnected() {
-	notify("Jenkins monitoring CONNECTED", "Enjoy...", greenMoon, "http://www.greenmoonsoftware.com")
+	notify([title:"Jenkins monitoring CONNECTED", text:"Enjoy..,.", "icon-base64":greenMoon, callback:"http://www.greenmoonsoftware.com"])
+}
+
+def addClasses() {
+	addClass(buildStartedClass, "Build Started")
+	Thread.sleep(500)
+	addClass(buildCompletedClass, "Build Completed")
+	Thread.sleep(500)
+	addClass(generalClass, "General")
+}
+
+def addClass(id, name) {
+	snarlConnection << """SNP/3.0\r\naddclass?app-sig=${appSignature}&id=${id}&name=${name}&title=Default&text=Default\r\nEND\r\n"""
 }
 
 def notifyRed(projectName, buildNumber, url) {
-	notify(1, projectName, "Build #${buildNumber} broke", redBall, url)
+	notify([priority:1, title:projectName, text:"Build #${buildNumber} broke", "icon-base64":redBall, callback:url, id:buildCompletedClass])
 }
 
 def notifyBlue(projectName, buildNumber, url) {
-	notify(projectName, "Build #${buildNumber} succeeded", successBall, url)
+	notify([title:projectName, text:"Build #${buildNumber} succeeded", "icon-base64":successBall, callback:url, id:buildCompletedClass])
 }
 
-def notify(title, text, icon, callback) {
-	notify(0, title, text, icon, callback)
-}
-
-def notify(priority, title, text, icon, callback) {
-	snarlConnection << """SNP/3.0\r\nnotify?app-sig=${appSignature}&title=${title}&text=${text}&priority=${priority}&icon-base64=${icon}&callback=${callback}\r\nEND\r\n"""
+def notify(params) {
+	//id: class (notificatioy) type
+	//title
+	//text
+	//priority: 1 - High, 0 - Normal
+	//icon-base64:
+	//callback:
+	snarlConnection << """SNP/3.0\r\nnotify?app-sig=${appSignature}&${params.collect{it}.join("&")}\r\nEND\r\n"""
 }
 
 class GroovyTimerTask extends TimerTask {
@@ -106,3 +149,4 @@ class TimerMethods {
         task
     }
 }
+
